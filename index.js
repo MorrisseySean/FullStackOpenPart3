@@ -19,6 +19,7 @@ let persons = [
   },
 ];
 
+app.use(express.json());
 app.get("/", (req, res) => {
   res.send("<h1>Hello World!</h1>");
 });
@@ -43,6 +44,40 @@ app.get("/api/persons/:id", (req, res) => {
   }
 });
 
+app.post("/api/persons", (req, res) => {
+  const body = req.body;
+  console.log(body);
+  if (!body) {
+    return res.status(400).json({
+      error: "No Body",
+      req: req.headers,
+    });
+  }
+  let error = "";
+  if (!body.name || !body.number) {
+    error = "The name or number is missing.\n";
+  } else {
+    const person = persons.find((person) => person.name === body.name);
+    if (person) {
+      error = "Name must be unique.";
+    }
+  }
+  if (error != "") {
+    return res.status(400).json({
+      error,
+    });
+  }
+
+  const person = {
+    name: body.name,
+    number: body.number,
+    id: generateId(),
+  };
+
+  persons = persons.concat(person);
+  res.json(person);
+});
+
 app.delete("/api/persons/:id", (req, res) => {
   const id = Number(req.params.id);
   persons = persons.filter((person) => person.id != id);
@@ -53,3 +88,7 @@ const PORT = 3001;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
+
+function generateId() {
+  return Math.floor(Math.random() * (5000 - 1)) + 1;
+}
