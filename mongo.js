@@ -12,7 +12,10 @@ if (!password) {
 
 /* Connect to database */
 const url = `mongodb+srv://wolfbrand:${password}@cluster0-ibecy.mongodb.net/phonebook?retryWrites=true&w=majority`;
-mongoose.connect(url, { useNewUrlParser: true, useUnifiedTopology: true });
+mongoose.connect(url, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+});
 
 /* Create Schema */
 const personSchema = new mongoose.Schema({

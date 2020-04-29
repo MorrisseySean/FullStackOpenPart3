@@ -1,7 +1,9 @@
+require("dotenv").config();
 const express = require("express");
 const morgan = require("morgan");
 const app = express();
 const cors = require("cors");
+const Person = require("./models/person");
 
 let persons = [
   {
@@ -30,11 +32,15 @@ app.use(
     ":method :url :status :res[content-length] - :response-time ms :newPerson"
   )
 );
+
 app.use(cors());
 
 app.use(express.static("build"));
+
 app.get("/api/persons", (req, res) => {
-  res.json(persons);
+  Person.find({}).then((result) => {
+    res.json(result);
+  });
 });
 
 app.get("/api/info", (req, res) => {
@@ -76,17 +82,22 @@ app.post("/api/persons", (req, res) => {
     });
   }
 
-  const person = {
+  const person = new Person({
     name: body.name,
     number: body.number,
-    id: generateId(),
-  };
+  });
+
   morgan.token("newPerson", function (req, res) {
     return JSON.stringify(person);
   });
-
-  persons = persons.concat(person);
-  res.json(person);
+  person
+    .save()
+    .then((response) => {
+      res.json(person);
+    })
+    .catch((err) => {
+      console.log(err);
+    });
 });
 
 app.delete("/api/persons/:id", (req, res) => {
