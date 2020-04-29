@@ -27,6 +27,7 @@ app.use(express.json());
 morgan.token("newPerson", function (req, res) {
   return "";
 });
+
 app.use(
   morgan(
     ":method :url :status :res[content-length] - :response-time ms :newPerson"
@@ -38,6 +39,7 @@ app.use(cors());
 app.use(express.static("build"));
 
 app.get("/api/persons", (req, res) => {
+  /* Find all persons on the database */
   Person.find({}).then((result) => {
     res.json(result);
   });
@@ -82,25 +84,50 @@ app.post("/api/persons", (req, res) => {
     });
   }
 
+  /* Create new Person object */
   const person = new Person({
     name: body.name,
     number: body.number,
   });
 
+  /* Save to database */
+  person.save().then((response) => {
+    res.json(person);
+  });
+
+  /* Log data */
   morgan.token("newPerson", function (req, res) {
     return JSON.stringify(person);
   });
-  person.save().then((response) => {
+});
+
+app.put("/api/persons/:id", (req, res) => {
+  /* Create new Person object */
+  const body = req.body;
+  const person = {
+    name: body.name,
+    number: body.number,
+  };
+
+  /* Update on the database */
+  Person.findByIdAndUpdate(req.params.id, person).then((response) => {
+    person.id = req.params.id;
     res.json(person);
+  });
+
+  /* Log data */
+  morgan.token("newPerson", function (req, res) {
+    return JSON.stringify(person);
   });
 });
 
 app.delete("/api/persons/:id", (req, res) => {
+  /* Remove person with id from database */
   Person.findByIdAndRemove(req.params.id).then((result) => {
     res.status(204).end();
   });
   // const id = Number(req.params.id);
-  //persons = persons.filter((person) => person.id != id);
+  // persons = persons.filter((person) => person.id != id);
 });
 
 const errorHandler = (err, request, response, next) => {
