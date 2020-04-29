@@ -90,27 +90,29 @@ app.post("/api/persons", (req, res) => {
   morgan.token("newPerson", function (req, res) {
     return JSON.stringify(person);
   });
-  person
-    .save()
-    .then((response) => {
-      res.json(person);
-    })
-    .catch((err) => {
-      console.log(err);
-    });
+  person.save().then((response) => {
+    res.json(person);
+  });
 });
 
 app.delete("/api/persons/:id", (req, res) => {
-  Person.findByIdAndRemove(req.params.id)
-    .then((result) => {
-      res.status(204).end();
-    })
-    .catch((err) => {
-      console.log(err);
-    });
+  Person.findByIdAndRemove(req.params.id).then((result) => {
+    res.status(204).end();
+  });
   // const id = Number(req.params.id);
   //persons = persons.filter((person) => person.id != id);
 });
+
+const errorHandler = (err, request, response, next) => {
+  console.error(err.message);
+
+  if (err.name === "CastError") {
+    return response.status(400).send({ error: "Malformed id" });
+  }
+  next(err);
+};
+
+app.use(errorHandler);
 
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
