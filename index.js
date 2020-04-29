@@ -38,30 +38,42 @@ app.use(cors());
 
 app.use(express.static("build"));
 
-app.get("/api/persons", (req, res) => {
+app.get("/api/persons", (req, res, next) => {
   /* Find all persons on the database */
-  Person.find({}).then((result) => {
-    res.json(result);
-  });
+  Person.find({})
+    .then((result) => {
+      res.json(result);
+    })
+    .catch((err) => next(err));
 });
 
-app.get("/api/info", (req, res) => {
-  const total = persons.length;
-  const date = new Date();
-  res.send(`<p>Phonebook has info for ${total} people.</p><p>${date}</p>`);
+app.get("/api/info", (req, res, next) => {
+  Person.countDocuments()
+    .then((response) => {
+      const date = new Date();
+      res.send(
+        `<p>Phonebook has info for ${response} people.</p><p>${date}</p>`
+      );
+    })
+    .catch((err) => next(err));
 });
 
-app.get("/api/persons/:id", (req, res) => {
-  const id = Number(req.params.id);
-  const person = persons.find((person) => person.id === id);
-  if (person) {
-    res.json(person);
-  } else {
-    res.status(404).end();
-  }
+app.get("/api/persons/:id", (req, res, next) => {
+  // const id = Number(req.params.id);
+  // const person = persons.find((person) => person.id === id);
+  // if (person) {
+  //  res.json(person);
+  //} else {
+  //  res.status(404).end();
+  //}
+  Person.findById(req.params.id)
+    .then((response) => {
+      res.json(person);
+    })
+    .catch((err) => next(err));
 });
 
-app.post("/api/persons", (req, res) => {
+app.post("/api/persons", (req, res, next) => {
   const body = req.body;
   if (!body) {
     return res.status(400).json({
@@ -91,9 +103,12 @@ app.post("/api/persons", (req, res) => {
   });
 
   /* Save to database */
-  person.save().then((response) => {
-    res.json(person);
-  });
+  person
+    .save()
+    .then((response) => {
+      res.json(person);
+    })
+    .catch((err) => next(err));
 
   /* Log data */
   morgan.token("newPerson", function (req, res) {
@@ -101,7 +116,7 @@ app.post("/api/persons", (req, res) => {
   });
 });
 
-app.put("/api/persons/:id", (req, res) => {
+app.put("/api/persons/:id", (req, res, next) => {
   /* Create new Person object */
   const body = req.body;
   const person = {
@@ -110,10 +125,12 @@ app.put("/api/persons/:id", (req, res) => {
   };
 
   /* Update on the database */
-  Person.findByIdAndUpdate(req.params.id, person).then((response) => {
-    person.id = req.params.id;
-    res.json(person);
-  });
+  Person.findByIdAndUpdate(req.params.id, person)
+    .then((response) => {
+      person.id = req.params.id;
+      res.json(person);
+    })
+    .catch((err) => next(err));
 
   /* Log data */
   morgan.token("newPerson", function (req, res) {
@@ -121,20 +138,25 @@ app.put("/api/persons/:id", (req, res) => {
   });
 });
 
-app.delete("/api/persons/:id", (req, res) => {
+app.delete("/api/persons/:id", (req, res, next) => {
   /* Remove person with id from database */
-  Person.findByIdAndRemove(req.params.id).then((result) => {
-    res.status(204).end();
-  });
+  Person.findByIdAndRemove(req.params.id)
+    .then((result) => {
+      res.status(204).end();
+    })
+    .catch((err) => next(err));
   // const id = Number(req.params.id);
   // persons = persons.filter((person) => person.id != id);
 });
 
-const errorHandler = (err, request, response, next) => {
+const errorHandler = (err, req, res, next) => {
   console.error(err.message);
 
   if (err.name === "CastError") {
-    return response.status(400).send({ error: "Malformed id" });
+    return res.status(400).send({ error: "Malformed id" });
+  }
+  if (err.name === "ValidationError") {
+    return res.status(400).json({ error: err.message });
   }
   next(err);
 };
