@@ -1,5 +1,7 @@
 const mongoose = require("mongoose");
 
+mongoose.set("useFindAndModify", false);
+
 const url = process.env.DATABASE;
 /* Connect to database */
 mongoose
